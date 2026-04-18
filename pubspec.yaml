@@ -1,0 +1,49 @@
+name: shoe_store_app
+description: Ứng dụng bán giày thể thao online chuyên nghiệp Flutter.
+
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  badges: ^3.1.2
+  intl: ^0.20.2
+  shared_preferences: ^2.3.0
+#  flutter_carousel_slider: ^1.1.0
+  image_picker: ^1.1.2
+  carousel_slider: ^5.0.0
+  google_fonts: ^6.2.1
+  firebase_core: ^2.27.0
+  cloud_firestore: ^4.15.8
+  cached_network_image: ^3.4.1
+  fl_chart: ^0.68.0
+  desktop_drop: ^0.4.4  # Hỗ trợ kéo thả
+  cross_file: ^0.3.4+2
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+
+
+#  final List<Shoe> _products = [
+#Shoe(id: '1', name: 'Nike Air Max 270', brand: 'Nike', category: 'Running', price: 2990000, imageUrl: 'https://picsum.photos/id/1015/400/400', description: 'Giày chạy bộ Nike Air Max 270 với công nghệ đệm khí tiên tiến.', sizes: ['38','39','40','41','42'], colors: ['Đen','Trắng','Xám']),
+#Shoe(id: '2', name: 'Adidas Ultraboost 22', brand: 'Adidas', category: 'Running', price: 3500000, imageUrl: 'https://picsum.photos/id/201/400/400', description: 'Giày chạy Adidas Ultraboost với boost foam.', sizes: ['38','39','40','41','42'], colors: ['Xanh','Đen','Trắng']),
+#Shoe(id: '3', name: 'Puma RS-X', brand: 'Puma', category: 'Casual', price: 2200000, imageUrl: 'https://picsum.photos/id/301/400/400', description: 'Giày casual Puma RS-X phong cách retro.', sizes: ['38','39','40','41'], colors: [',, Đỏ,','Đen','Trắng']),
+#Shoe(id: '4', name: 'Nike Jordan 1', brand: 'Nike', category: 'Basketball', price: 4500000, imageUrl: 'https://picsum.photos/id/401/400/400', description: 'Nike Air Jordan 1 Retro High.', sizes: ['39','40','41','42'], colors: ['Đỏ','Đen','Trắng']),
+#Shoe(id: '5', name: 'Adidas Stan Smith', brand: 'Adidas', category: 'Casual', price: 1800000, imageUrl: 'https://picsum.photos/id/501/400/400', description: 'Giày classic Adidas Stan Smith.', sizes: ['38','39','40'], colors: ['Trắng','Xanh']),
+#Shoe(id: '6', name: 'Under Armour Curry 9', brand: 'Under Armour', category: 'Basketball', price: 3200000, imageUrl: 'https://picsum.photos/id/601/400/400', description: 'Giày bóng rổ Under Armour Curry.', sizes: ['39','40','41'], colors: ['Vàng','Đen']),
+#Shoe(id: '7', name: 'Nike Pegasus 40', brand: 'Nike', category: 'Running', price: 2800000, imageUrl: 'https://picsum.photos/id/701/400/400', description: 'Giày chạy Nike Pegasus 40.', sizes: ['38','39','40','41','42'], colors: ['Xanh','Đen']),
+#Shoe(id: '8', name: 'Puma Future Rider', brand: 'Puma', category: 'Casual', price: 1900000, imageUrl: 'https://picsum.photos/id/801/400/400', description: 'Giày Puma Future Rider.', sizes: ['38','39','40'], colors: ['Đen','Trắng']),

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "73786649304",
+    "project_id": "btlchuyende2",
+    "storage_bucket": "btlchuyende2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:73786649304:android:5acd90f85a5103053105ad",
+        "android_client_info": {
+          "package_name": "com.example.btl_chuyende2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApzWBh-sGHS1b2j0dLWM0pwhNM9DJj3Qw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:73786649304:android:fb4b81aa7556ea4a3105ad",
+        "android_client_info": {
+          "package_name": "com.example.shoe_store_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApzWBh-sGHS1b2j0dLWM0pwhNM9DJj3Qw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
