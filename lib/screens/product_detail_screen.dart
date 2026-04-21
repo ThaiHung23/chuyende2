@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
-import 'package:share_plus/share_plus.dart'; // 1. Import thư viện chia sẻ
+import 'package:share_plus/share_plus.dart'; // Import thư viện chia sẻ
 import '../models/shoe.dart';
 import '../models/review.dart';
 import '../providers/cart_provider.dart';
@@ -23,6 +23,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   String? selectedSize;
   String? selectedColor;
   double userRating = 5.0;
+  int selectedFilterStar = 0; // 0: Tất cả, 1-5: Lọc theo sao
   final TextEditingController _commentController = TextEditingController();
 
   @override
@@ -31,18 +32,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.dispose();
   }
 
-  // Hàm thực hiện chia sẻ
+  // --- HÀM CHIA SẺ ---
   void _shareProduct(Shoe shoe) {
     final String text = '''
-🔥 Kiểm tra ngay sản phẩm cực hot: ${shoe.name}
+🔥 Xem ngay đôi giày cực chất: ${shoe.name}
 👟 Thương hiệu: ${shoe.brand}
-💰 Giá bán: ${shoe.price.toStringAsFixed(0)} VNĐ
+💰 Giá: ${shoe.price.toStringAsFixed(0)} VNĐ
 ⭐ Đánh giá: ${shoe.averageRating.toStringAsFixed(1)}/5.0
 
-Xem chi tiết tại ứng dụng Shoe Store!
+Tải app ngay để mua sắm!
 ''';
+    Share.share(text, subject: 'Chia sẻ sản phẩm ${shoe.name}');
+  }
 
-    Share.share(text, subject: 'Chia sẻ giày ${shoe.name}');
+  // --- HÀM LỌC REVIEW ---
+  List<Review> getFilteredReviews(List<Review> allReviews) {
+    if (selectedFilterStar == 0) return allReviews;
+    return allReviews.where((r) => r.rating.toInt() == selectedFilterStar).toList();
   }
 
   Widget buildProductImage(String imageUrl) {
@@ -184,7 +190,6 @@ Xem chi tiết tại ứng dụng Shoe Store!
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
             actions: [
-              // 2. Nút chia sẻ trên AppBar
               IconButton(
                 icon: const Icon(Icons.share),
                 onPressed: () => _shareProduct(currentShoe),
@@ -201,6 +206,7 @@ Xem chi tiết tại ứng dụng Shoe Store!
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Header Brand & Favorite
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -221,6 +227,8 @@ Xem chi tiết tại ứng dụng Shoe Store!
                       Text('${currentShoe.price.toStringAsFixed(0)} VNĐ',
                           style: const TextStyle(fontSize: 22, color: Colors.red, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
+
+                      // Rating Overview
                       Row(
                         children: [
                           StarRating(rating: currentShoe.averageRating, size: 22),
@@ -231,6 +239,8 @@ Xem chi tiết tại ứng dụng Shoe Store!
                       const SizedBox(height: 20),
                       Text(currentShoe.description, style: const TextStyle(fontSize: 16)),
                       const SizedBox(height: 24),
+
+                      // Chọn Size
                       const Text('Chọn size:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       Wrap(
                         spacing: 8,
@@ -243,6 +253,8 @@ Xem chi tiết tại ứng dụng Shoe Store!
                         )).toList(),
                       ),
                       const SizedBox(height: 16),
+
+                      // Chọn Màu
                       const Text('Chọn màu:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       Wrap(
                         spacing: 8,
@@ -265,41 +277,86 @@ Xem chi tiết tại ứng dụng Shoe Store!
                           onPressed: _showReviewDialog,
                         ),
                       ),
-
-                      const SizedBox(height: 12),
-
-                      // 3. Nút Chia sẻ thêm ở dưới mô tả (Tùy chọn)
-                      // SizedBox(
-                      //   width: double.infinity,
-                      //   child: TextButton.icon(
-                      //     icon: const Icon(Icons.ios_share),
-                      //     label: const Text('Chia sẻ với bạn bè'),
-                      //     onPressed: () => _shareProduct(currentShoe),
-                      //   ),
-                      // ),
-
                       const SizedBox(height: 30),
+
+                      // --- PHẦN PHÂN LOẠI ĐÁNH GIÁ ---
                       const Text('Đánh giá từ khách hàng', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
-                      if (currentShoe.reviews.isEmpty)
-                        const Text('Chưa có đánh giá nào. Hãy là người đầu tiên!'),
-                      ...currentShoe.reviews.map((review) => Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          title: Row(
-                            children: [
-                              Text(review.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              const Spacer(),
-                              StarRating(rating: review.rating, size: 18),
-                            ],
-                          ),
-                          subtitle: Text(review.comment),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ChoiceChip(
+                              label: const Text('Tất cả'),
+                              selected: selectedFilterStar == 0,
+                              onSelected: (_) => setState(() => selectedFilterStar = 0),
+                              selectedColor: Colors.red.withOpacity(0.2),
+                            ),
+                            const SizedBox(width: 8),
+                            ...List.generate(5, (index) {
+                              int star = 5 - index;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Row(
+                                    children: [
+                                      Text('$star'),
+                                      const Icon(Icons.star, size: 14, color: Colors.amber),
+                                    ],
+                                  ),
+                                  selected: selectedFilterStar == star,
+                                  onSelected: (selected) => setState(() => selectedFilterStar = selected ? star : 0),
+                                  selectedColor: Colors.red.withOpacity(0.2),
+                                ),
+                              );
+                            }),
+                          ],
                         ),
-                      )).toList(),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Danh sách đánh giá đã lọc
+                      Builder(builder: (context) {
+                        final filteredReviews = getFilteredReviews(currentShoe.reviews);
+                        if (filteredReviews.isEmpty) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Text('Không có đánh giá nào cho mức này.', style: TextStyle(color: Colors.grey)),
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: filteredReviews.map((review) => Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              title: Row(
+                                children: [
+                                  Text(review.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  const Spacer(),
+                                  StarRating(rating: review.rating, size: 18),
+                                ],
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Text(review.comment),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "${review.date.day}/${review.date.month}/${review.date.year}",
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )).toList(),
+                        );
+                      }),
 
                       const SizedBox(height: 40),
 
-                      // --- PHẦN 2 NÚT BẤM KẾT NỐI VỚI CART_SCREEN ---
+                      // --- NÚT GIỎ HÀNG & MUA NGAY ---
                       Row(
                         children: [
                           Expanded(
@@ -314,18 +371,10 @@ Xem chi tiết tại ứng dụng Shoe Store!
                                     ? () {
                                   cartProvider.addToCart(currentShoe, selectedSize!, selectedColor!);
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Đã thêm vào giỏ hàng!'),
-                                      duration: Duration(seconds: 1),
-                                    ),
+                                    const SnackBar(content: Text('Đã thêm vào giỏ hàng!'), duration: Duration(seconds: 1)),
                                   );
-                                }
-                                    : null,
-                                child: const Text(
-                                  'Thêm giỏ hàng',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                ),
+                                } : null,
+                                child: const Text('Thêm giỏ hàng', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ),
@@ -343,16 +392,9 @@ Xem chi tiết tại ứng dụng Shoe Store!
                                 onPressed: (selectedSize != null && selectedColor != null)
                                     ? () {
                                   cartProvider.addToCart(currentShoe, selectedSize!, selectedColor!);
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const CartScreen()),
-                                  );
-                                }
-                                    : null,
-                                child: const Text(
-                                  'Mua ngay',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+                                } : null,
+                                child: const Text('Mua ngay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ),
