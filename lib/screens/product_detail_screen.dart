@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
+import 'package:share_plus/share_plus.dart'; // 1. Import thư viện chia sẻ
 import '../models/shoe.dart';
 import '../models/review.dart';
 import '../providers/cart_provider.dart';
@@ -8,7 +9,6 @@ import '../providers/wishlist_provider.dart';
 import '../providers/product_provider.dart';
 import '../widgets/star_rating.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-// Import file giỏ hàng của bạn
 import 'cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -29,6 +29,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  // Hàm thực hiện chia sẻ
+  void _shareProduct(Shoe shoe) {
+    final String text = '''
+🔥 Kiểm tra ngay sản phẩm cực hot: ${shoe.name}
+👟 Thương hiệu: ${shoe.brand}
+💰 Giá bán: ${shoe.price.toStringAsFixed(0)} VNĐ
+⭐ Đánh giá: ${shoe.averageRating.toStringAsFixed(1)}/5.0
+
+Xem chi tiết tại ứng dụng Shoe Store!
+''';
+
+    Share.share(text, subject: 'Chia sẻ giày ${shoe.name}');
   }
 
   Widget buildProductImage(String imageUrl) {
@@ -169,6 +183,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             title: Text(currentShoe.name),
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
+            actions: [
+              // 2. Nút chia sẻ trên AppBar
+              IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: () => _shareProduct(currentShoe),
+              ),
+            ],
           ),
           body: SingleChildScrollView(
             child: Column(
@@ -234,6 +255,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         )).toList(),
                       ),
                       const SizedBox(height: 30),
+
+                      // Nút Viết đánh giá
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
@@ -242,6 +265,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           onPressed: _showReviewDialog,
                         ),
                       ),
+
+                      const SizedBox(height: 12),
+
+                      // 3. Nút Chia sẻ thêm ở dưới mô tả (Tùy chọn)
+                      // SizedBox(
+                      //   width: double.infinity,
+                      //   child: TextButton.icon(
+                      //     icon: const Icon(Icons.ios_share),
+                      //     label: const Text('Chia sẻ với bạn bè'),
+                      //     onPressed: () => _shareProduct(currentShoe),
+                      //   ),
+                      // ),
+
                       const SizedBox(height: 30),
                       const Text('Đánh giá từ khách hàng', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
@@ -266,7 +302,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       // --- PHẦN 2 NÚT BẤM KẾT NỐI VỚI CART_SCREEN ---
                       Row(
                         children: [
-                          // NÚT 1: THÊM VÀO GIỎ HÀNG (Ở LẠI TRANG)
                           Expanded(
                             child: SizedBox(
                               height: 56,
@@ -295,8 +330,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-
-                          // NÚT 2: MUA NGAY (NHẢY SANG GIỎ HÀNG)
                           Expanded(
                             child: SizedBox(
                               height: 56,
@@ -309,10 +342,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 ),
                                 onPressed: (selectedSize != null && selectedColor != null)
                                     ? () {
-                                  // 1. Thêm vào giỏ hàng
                                   cartProvider.addToCart(currentShoe, selectedSize!, selectedColor!);
-
-                                  // 2. Chuyển hướng ngay tới CartScreen
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(builder: (context) => const CartScreen()),
