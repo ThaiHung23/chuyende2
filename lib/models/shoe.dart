@@ -10,6 +10,7 @@ class Shoe {
   final String description;
   final List<String> sizes;
   final List<String> colors;
+  final String gender;          // <-- THÊM: nam, nữ, unisex
   final List<Review> reviews;
 
   double get averageRating {
@@ -27,10 +28,10 @@ class Shoe {
     required this.description,
     required this.sizes,
     required this.colors,
+    required this.gender,       // <-- required
     List<Review>? reviews,
   }) : reviews = reviews ?? [];
 
-  // Chuyển thành JSON để lưu
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -41,10 +42,10 @@ class Shoe {
     'description': description,
     'sizes': sizes,
     'colors': colors,
+    'gender': gender,
     'reviews': reviews.map((r) => r.toJson()).toList(),
   };
 
-  // Tạo từ JSON
   factory Shoe.fromJson(Map<String, dynamic> json) => Shoe(
     id: json['id'],
     name: json['name'],
@@ -55,8 +56,10 @@ class Shoe {
     description: json['description'],
     sizes: List<String>.from(json['sizes']),
     colors: List<String>.from(json['colors']),
-    reviews: (json['reviews'] as List)
-        .map((r) => Review.fromJson(r))
-        .toList(),
+    gender: json['gender'] ?? 'unisex',
+    reviews: (json['reviews'] as List<dynamic>?)
+        ?.map((r) => Review.fromJson(r))
+        .toList() ??
+        [],
   );
 }

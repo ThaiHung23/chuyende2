@@ -6,83 +6,71 @@ import '../models/shoe.dart';
 class ProductProvider with ChangeNotifier {
   List<Shoe> _products = [];
   String _searchQuery = '';
+  String _selectedColor = 'All';
+  String _selectedGender = 'All';
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<Shoe> get products => _products;
 
-  // Lọc sản phẩm theo tìm kiếm
+  // Getter lọc đầy đủ
   List<Shoe> get filteredProducts {
-    if (_searchQuery.isEmpty) return _products;
-    return _products
-        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
+    return _products.where((p) {
+      final matchSearch = _searchQuery.isEmpty ||
+          p.name.toLowerCase().contains(_searchQuery.toLowerCase());
+
+      final matchColor = _selectedColor == 'All' ||
+          p.colors.any((c) => c.toLowerCase() == _selectedColor.toLowerCase());
+
+      final matchGender = _selectedGender == 'All' ||
+          p.gender.toLowerCase() == _selectedGender.toLowerCase();
+
+      return matchSearch && matchColor && matchGender;
+    }).toList();
   }
 
-  // ====================== CÁC HÀM XỬ LÝ LỖI CỦA BẠN ======================
+  String get selectedColor => _selectedColor;
+  String get selectedGender => _selectedGender;
 
-  // Sửa lỗi ở HomeScreen & ShopScreen
   void searchProducts(String query) {
     _searchQuery = query;
     notifyListeners();
   }
 
-  // Sửa lỗi ở ProductDetailScreen
-  Future<void> addReview(String productId, Review review) async {
-    try {
-      // Tìm đôi giày cần thêm review
-      final shoeIndex = _products.indexWhere((p) => p.id == productId);
-      if (shoeIndex != -1) {
-        // Gửi lên Firebase: Cập nhật mảng reviews bằng FieldValue.arrayUnion
-        await _firestore.collection('products').doc(productId).update({
-          'reviews': FieldValue.arrayUnion([
-            {
-              'userName': review.userName,
-              'rating': review.rating,
-              'comment': review.comment,
-              'date': review.date.toIso8601String(),
-            }
-          ])
-        });
-        // fetchProducts() sẽ tự động cập nhật lại UI nhờ listener snapshots
-      }
-    } catch (e) {
-      print("Lỗi khi thêm review: $e");
-    }
+  void setColorFilter(String color) {
+    _selectedColor = color;
+    notifyListeners();
   }
 
-  // ====================== KẾT NỐI FIREBASE ======================
+  void setGenderFilter(String gender) {
+    _selectedGender = gender;
+    notifyListeners();
+  }
 
+  void clearFilters() {
+    _searchQuery = '';
+    _selectedColor = 'All';
+    _selectedGender = 'All';
+    notifyListeners();
+  }
+
+  // Fetch products (giữ nguyên)
   void fetchProducts() {
     _firestore.collection('products').snapshots().listen((snapshot) {
       _products = snapshot.docs.map((doc) {
         final data = doc.data();
-        return Shoe(
-          id: doc.id,
-          name: data['name'] ?? '',
-          brand: data['brand'] ?? '',
-          category: data['category'] ?? 'Running',
-          price: (data['price'] as num).toDouble(),
-          imageUrl: data['imageUrl'] ?? '',
-          description: data['description'] ?? '',
-          sizes: List<String>.from(data['sizes'] ?? []),
-          colors: List<String>.from(data['colors'] ?? []),
-          reviews: (data['reviews'] as List<dynamic>?)
-              ?.map((r) => Review(
-            userName: r['userName'],
-            rating: (r['rating'] as num).toDouble(),
-            comment: r['comment'],
-            date: DateTime.parse(r['date']),
-          ))
-              .toList() ?? [],
-        );
+        return Shoe.fromJson({...data, 'id': doc.id}); // Đảm bảo id đúng
       }).toList();
+
       notifyListeners();
     });
   }
 
+  // ====================== THÊM SẢN PHẨM ======================
   Future<void> addProduct(Shoe shoe) async {
     try {
-      await _firestore.collection('products').add({
+      // Chỉ lưu lên Firebase, KHÔNG thêm thủ công vào list
+      await _firestore.collection('products').doc(shoe.id).set({
         'name': shoe.name,
         'brand': shoe.brand,
         'category': shoe.category,
@@ -91,23 +79,38 @@ class ProductProvider with ChangeNotifier {
         'description': shoe.description,
         'sizes': shoe.sizes,
         'colors': shoe.colors,
-        'reviews': [], // Khởi tạo mảng review trống
+        'gender': shoe.gender,
+        'reviews': [],
       });
+
+      // KHÔNG CÓ DÒNG _products.add(shoe); nữa
+      // Listener snapshots() sẽ tự cập nhật
     } catch (e) {
-      print("Lỗi khi thêm sản phẩm: $e");
+      print('Lỗi thêm sản phẩm: $e');
+      rethrow;
     }
   }
 
+// ====================== CẬP NHẬT SẢN PHẨM ======================
   Future<void> updateProduct(String id, Shoe newShoe) async {
     try {
       await _firestore.collection('products').doc(id).update({
         'name': newShoe.name,
         'brand': newShoe.brand,
+        'category': newShoe.category,
         'price': newShoe.price,
+        'imageUrl': newShoe.imageUrl,
         'description': newShoe.description,
+        'sizes': newShoe.sizes,
+        'colors': newShoe.colors,
+        'gender': newShoe.gender,
       });
+
+      // KHÔNG gán thủ công _products[index] = newShoe;
+      // Listener sẽ tự cập nhật
     } catch (e) {
-      print("Lỗi khi sửa: $e");
+      print('Lỗi cập nhật sản phẩm: $e');
+      rethrow;
     }
   }
 
@@ -116,6 +119,26 @@ class ProductProvider with ChangeNotifier {
       await _firestore.collection('products').doc(id).delete();
     } catch (e) {
       print("Lỗi khi xóa: $e");
+    }
+  }
+
+  Future<void> addReview(String productId, Review review) async {
+    try {
+      final productRef = _firestore.collection('products').doc(productId);
+
+      await productRef.update({
+        'reviews': FieldValue.arrayUnion([review.toJson()]),
+      });
+
+      // Cập nhật lại danh sách local
+      final index = _products.indexWhere((p) => p.id == productId);
+      if (index != -1) {
+        _products[index].reviews.add(review);
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Lỗi thêm review: $e');
+      rethrow;
     }
   }
 }

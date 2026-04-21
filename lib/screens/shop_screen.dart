@@ -1,3 +1,4 @@
+// lib/screens/shop_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
@@ -11,17 +12,14 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  // Chúng ta không cần biến searchQuery ở đây nữa vì đã có trong Provider
   String selectedCategory = 'All';
 
   @override
   Widget build(BuildContext context) {
     final productProvider = Provider.of<ProductProvider>(context);
-
-    // BƯỚC 1: Lấy danh sách đã được lọc theo tìm kiếm từ Provider
     var displayedProducts = productProvider.filteredProducts;
 
-    // BƯỚC 2: Tiếp tục lọc theo Danh mục (Category) nếu người dùng chọn
+    // Lọc thêm theo category (nếu muốn giữ)
     if (selectedCategory != 'All') {
       displayedProducts = displayedProducts
           .where((shoe) => shoe.category == selectedCategory)
@@ -33,26 +31,29 @@ class _ShopScreenState extends State<ShopScreen> {
         title: const Text('Cửa hàng'),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () => _showFilterBottomSheet(context, productProvider),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // === Ô TÌM KIẾM ===
+          // Thanh tìm kiếm
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               decoration: InputDecoration(
-                  hintText: 'Tìm kiếm giày...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))
+                hintText: 'Tìm kiếm giày...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              onChanged: (value) {
-                // Chỉ cần gọi hàm này, UI sẽ tự động cập nhật nhờ notifyListeners()
-                productProvider.searchProducts(value);
-              },
+              onChanged: (value) => productProvider.searchProducts(value),
             ),
           ),
 
-          // === BỘ LỌC DANH MỤC ===
+          // Filter Category
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -73,7 +74,32 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ),
 
-          // === GRID HIỂN THỊ SẢN PHẨM ===
+          // Hiển thị filter hiện tại
+          if (productProvider.selectedColor != 'All' || productProvider.selectedGender != 'All')
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  if (productProvider.selectedColor != 'All')
+                    Chip(
+                      label: Text('Màu: ${productProvider.selectedColor}'),
+                      onDeleted: () => productProvider.setColorFilter('All'),
+                    ),
+                  if (productProvider.selectedGender != 'All')
+                    Chip(
+                      label: Text('Giới tính: ${productProvider.selectedGender}'),
+                      onDeleted: () => productProvider.setGenderFilter('All'),
+                    ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: productProvider.clearFilters,
+                    child: const Text('Xóa tất cả'),
+                  ),
+                ],
+              ),
+            ),
+
+          // Grid sản phẩm
           Expanded(
             child: displayedProducts.isEmpty
                 ? const Center(child: Text('Không tìm thấy sản phẩm nào'))
@@ -91,8 +117,10 @@ class _ShopScreenState extends State<ShopScreen> {
                 return ShoeCard(
                   shoe: shoe,
                   onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => ProductDetailScreen(shoe: shoe))
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProductDetailScreen(shoe: shoe),
+                    ),
                   ),
                 );
               },
@@ -100,6 +128,50 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showFilterBottomSheet(BuildContext context, ProductProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Lọc theo màu sắc', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Wrap(
+                children: ['All', 'Đỏ', 'Đen', 'Trắng', 'Xanh', 'Vàng', 'Hồng'].map((color) {
+                  return FilterChip(
+                    label: Text(color),
+                    selected: provider.selectedColor == color,
+                    onSelected: (sel) {
+                      provider.setColorFilter(sel ? color : 'All');
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              const Text('Giới tính', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Wrap(
+                children: ['All', 'Nam', 'Nữ', 'Unisex'].map((g) {
+                  return FilterChip(
+                    label: Text(g),
+                    selected: provider.selectedGender == g,
+                    onSelected: (sel) {
+                      provider.setGenderFilter(sel ? g : 'All');
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
