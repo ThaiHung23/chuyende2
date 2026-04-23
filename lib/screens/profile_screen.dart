@@ -22,11 +22,11 @@ class ProfileScreen extends StatelessWidget {
     final isAdmin = authProvider.role == 'admin';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hồ sơ'),
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
-      ),
+      // appBar: AppBar(
+      //   title: const Text('Hồ sơ'),
+      //   backgroundColor: Colors.red,
+      //   foregroundColor: Colors.white,
+      // ),
       body: SingleChildScrollView(
         child: Column(
           children: [

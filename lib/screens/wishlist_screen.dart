@@ -12,10 +12,10 @@ class WishlistScreen extends StatelessWidget {
     final wishlistProvider = Provider.of<WishlistProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Yêu thích'),
-        backgroundColor: Colors.red,
-      ),
+      // appBar: AppBar(
+      //   title: const Text('Yêu thích'),
+      //   backgroundColor: Colors.red,
+      // ),
       body: wishlistProvider.items.isEmpty
           ? const Center(
         child: Text(

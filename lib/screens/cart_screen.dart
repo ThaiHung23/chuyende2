@@ -110,7 +110,7 @@ class CartScreen extends StatelessWidget {
     final cartProvider = Provider.of<CartProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Giỏ hàng'), backgroundColor: Colors.red, foregroundColor: Colors.white),
+      // appBar: AppBar(title: const Text('Giỏ hàng'), backgroundColor: Colors.red, foregroundColor: Colors.white),
       body: cartProvider.items.isEmpty
           ? const Center(child: Text('Giỏ hàng trống', style: TextStyle(fontSize: 18)))
           : ListView.builder(
