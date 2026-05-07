@@ -7,6 +7,7 @@ import '../models/review.dart';
 import '../providers/cart_provider.dart';
 import '../providers/wishlist_provider.dart';
 import '../providers/product_provider.dart';
+import '../providers/auth_provider.dart'; // THÊM
 import '../widgets/star_rating.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'cart_screen.dart';
@@ -84,6 +85,8 @@ Tải app ngay để mua sắm!
     userRating = 5.0;
     _commentController.clear();
 
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -146,8 +149,11 @@ Tải app ngay để mua sắm!
                   return;
                 }
 
+                // Lấy email người dùng làm tên hiển thị
+                final userName = authProvider.currentUser?.email ?? 'Khách hàng';
+
                 final newReview = Review(
-                  userName: 'Khách hàng',
+                  userName: userName,
                   rating: userRating,
                   comment: comment,
                   date: DateTime.now(),
@@ -157,7 +163,6 @@ Tải app ngay để mua sắm!
                     .addReview(widget.shoe.id, newReview);
 
                 Navigator.pop(context);
-                setState(() {});
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Cảm ơn bạn đã đánh giá!')),
@@ -175,6 +180,7 @@ Tải app ngay để mua sắm!
   Widget build(BuildContext context) {
     return Consumer<ProductProvider>(
       builder: (context, productProvider, child) {
+        // Tìm sản phẩm mới nhất từ provider
         final currentShoe = productProvider.products.firstWhere(
               (s) => s.id == widget.shoe.id,
           orElse: () => widget.shoe,
@@ -183,6 +189,9 @@ Tải app ngay để mua sắm!
         final cartProvider = Provider.of<CartProvider>(context, listen: false);
         final wishlistProvider = Provider.of<WishlistProvider>(context);
         final isFavorite = wishlistProvider.isInWishlist(currentShoe.id);
+
+        // Kiểm tra còn hàng hay không
+        final isOutOfStock = currentShoe.stock <= 0;
 
         return Scaffold(
           appBar: AppBar(
@@ -224,8 +233,21 @@ Tải app ngay để mua sắm!
                         ],
                       ),
                       Text(currentShoe.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                      Text('${currentShoe.price.toStringAsFixed(0)} VNĐ',
-                          style: const TextStyle(fontSize: 22, color: Colors.red, fontWeight: FontWeight.bold)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${currentShoe.price.toStringAsFixed(0)} VNĐ',
+                              style: const TextStyle(fontSize: 22, color: Colors.red, fontWeight: FontWeight.bold)),
+                          Text(
+                            isOutOfStock ? 'HẾT HÀNG' : 'Tồn kho: ${currentShoe.stock}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isOutOfStock ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 12),
 
                       // Rating Overview
@@ -364,17 +386,26 @@ Tải app ngay để mua sắm!
                               height: 56,
                               child: OutlinedButton(
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Colors.red, width: 1.5),
+                                  side: BorderSide(
+                                    color: isOutOfStock ? Colors.grey : Colors.red,
+                                    width: 1.5,
+                                  ),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                onPressed: (selectedSize != null && selectedColor != null)
+                                onPressed: (selectedSize != null && selectedColor != null && !isOutOfStock)
                                     ? () {
                                   cartProvider.addToCart(currentShoe, selectedSize!, selectedColor!);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Đã thêm vào giỏ hàng!'), duration: Duration(seconds: 1)),
                                   );
                                 } : null,
-                                child: const Text('Thêm giỏ hàng', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                child: Text(
+                                  isOutOfStock ? 'Hết hàng' : 'Thêm giỏ hàng',
+                                  style: TextStyle(
+                                    color: isOutOfStock ? Colors.grey : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -384,17 +415,20 @@ Tải app ngay để mua sắm!
                               height: 56,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: isOutOfStock ? Colors.grey : Colors.red,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   elevation: 0,
                                 ),
-                                onPressed: (selectedSize != null && selectedColor != null)
+                                onPressed: (selectedSize != null && selectedColor != null && !isOutOfStock)
                                     ? () {
                                   cartProvider.addToCart(currentShoe, selectedSize!, selectedColor!);
                                   Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
                                 } : null,
-                                child: const Text('Mua ngay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                child: Text(
+                                  isOutOfStock ? 'Hết hàng' : 'Mua ngay',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ),
                           ),

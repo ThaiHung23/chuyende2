@@ -42,7 +42,25 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                 child: _buildImage(shoe.imageUrl),
               ),
               title: Text(shoe.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('${shoe.brand} • ${shoe.category} • ${shoe.gender} • ${shoe.price.toStringAsFixed(0)} VNĐ'),
+              // Trong ListTile của ListView.builder
+              subtitle: Column(  crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${shoe.brand} • ${shoe.category} • ${shoe.gender}'),
+                  Text(
+                    '${shoe.price.toStringAsFixed(0)} VNĐ',
+                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                  // Hiển thị số lượng tồn kho ở đây
+                  Text(
+                    'Tồn kho: ${shoe.stock}',
+                    style: TextStyle(
+                      color: shoe.stock < 5 ? Colors.red : Colors.green, // Cảnh báo khi sắp hết hàng
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              isThreeLine: true,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -92,6 +110,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
     final brandController = TextEditingController();
     final categoryController = TextEditingController(text: 'Running');
     final priceController = TextEditingController();
+    final stockController = TextEditingController(text: '0'); // THÊM
     final descriptionController = TextEditingController();
     final sizesController = TextEditingController(text: '38,39,40');
     final colorsController = TextEditingController(text: 'Đen,Trắng');
@@ -139,6 +158,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                   ),
 
                   TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Giá (VNĐ) *'), keyboardType: TextInputType.number),
+                  TextField(controller: stockController, decoration: const InputDecoration(labelText: 'Số lượng tồn kho *'), keyboardType: TextInputType.number), // THÊM
                   TextField(controller: descriptionController, decoration: const InputDecoration(labelText: 'Mô tả'), maxLines: 2),
                   TextField(controller: sizesController, decoration: const InputDecoration(labelText: 'Size')),
                   TextField(controller: colorsController, decoration: const InputDecoration(labelText: 'Màu sắc')),
@@ -160,6 +180,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                     brand: brandController.text,
                     category: categoryController.text,
                     price: double.tryParse(priceController.text) ?? 0,
+                    stock: int.tryParse(stockController.text) ?? 0, // THÊM
                     imageUrl: selectedImagePath!,
                     description: descriptionController.text,
                     sizes: sizesController.text.split(',').map((e) => e.trim()).toList(),
@@ -186,6 +207,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
     final brandController = TextEditingController(text: shoe.brand);
     final categoryController = TextEditingController(text: shoe.category);
     final priceController = TextEditingController(text: shoe.price.toString());
+    final stockController = TextEditingController(text: shoe.stock.toString()); // THÊM
     final descriptionController = TextEditingController(text: shoe.description);
     final sizesController = TextEditingController(text: shoe.sizes.join(','));
     final colorsController = TextEditingController(text: shoe.colors.join(','));
@@ -233,6 +255,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                   ),
 
                   TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Giá (VNĐ)'), keyboardType: TextInputType.number),
+                  TextField(controller: stockController, decoration: const InputDecoration(labelText: 'Số lượng tồn kho'), keyboardType: TextInputType.number), // THÊM
                   TextField(controller: descriptionController, decoration: const InputDecoration(labelText: 'Mô tả'), maxLines: 2),
                   TextField(controller: sizesController, decoration: const InputDecoration(labelText: 'Size')),
                   TextField(controller: colorsController, decoration: const InputDecoration(labelText: 'Màu sắc')),
@@ -251,6 +274,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                     brand: brandController.text,
                     category: categoryController.text,
                     price: double.tryParse(priceController.text) ?? shoe.price,
+                    stock: int.tryParse(stockController.text) ?? shoe.stock, // THÊM
                     imageUrl: newImagePath!,
                     description: descriptionController.text,
                     sizes: sizesController.text.split(',').map((e) => e.trim()).toList(),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
 import '../providers/order_provider.dart';
+import '../providers/product_provider.dart';
 import '../models/cart_item.dart';
 import '../models/return_request.dart';
 import 'return_request_screen.dart';
@@ -14,6 +15,7 @@ class ManageOrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final orderProvider = Provider.of<OrderProvider>(context);
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +62,7 @@ class ManageOrdersScreen extends StatelessWidget {
             elevation: 4,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: isAdmin
-                ? _buildAdminOrderTile(context, order, mainItem, orderProvider)
+                ? _buildAdminOrderTile(context, order, mainItem, orderProvider, productProvider)
                 : _buildCustomerOrderTile(context, order, mainItem, orderProvider),
           );
         },
@@ -69,7 +71,7 @@ class ManageOrdersScreen extends StatelessWidget {
   }
 
   // ==================== ADMIN: HIỂN THỊ VÀ XỬ LÝ ĐƠN HÀNG ====================
-  Widget _buildAdminOrderTile(BuildContext context, dynamic order, dynamic mainItem, OrderProvider orderProvider) {
+  Widget _buildAdminOrderTile(BuildContext context, dynamic order, dynamic mainItem, OrderProvider orderProvider, ProductProvider productProvider) {
     return ExpansionTile(
       leading: ClipRRect(
         borderRadius: BorderRadius.circular(8),
@@ -184,6 +186,7 @@ class ManageOrdersScreen extends StatelessWidget {
                             currentStatus: order.status,
                             orderId: order.id,
                             orderProvider: orderProvider,
+                            productProvider: productProvider,
                             color: Colors.orange,
                           ),
                           _buildStatusButton(
@@ -192,6 +195,7 @@ class ManageOrdersScreen extends StatelessWidget {
                             currentStatus: order.status,
                             orderId: order.id,
                             orderProvider: orderProvider,
+                            productProvider: productProvider,
                             color: Colors.purple,
                           ),
                           _buildStatusButton(
@@ -200,6 +204,7 @@ class ManageOrdersScreen extends StatelessWidget {
                             currentStatus: order.status,
                             orderId: order.id,
                             orderProvider: orderProvider,
+                            productProvider: productProvider,
                             color: Colors.blue,
                           ),
                           _buildStatusButton(
@@ -208,6 +213,7 @@ class ManageOrdersScreen extends StatelessWidget {
                             currentStatus: order.status,
                             orderId: order.id,
                             orderProvider: orderProvider,
+                            productProvider: productProvider,
                             color: Colors.green,
                           ),
                           if (order.status == 'Đang xử lý')
@@ -217,6 +223,7 @@ class ManageOrdersScreen extends StatelessWidget {
                               currentStatus: order.status,
                               orderId: order.id,
                               orderProvider: orderProvider,
+                              productProvider: productProvider,
                               color: Colors.red,
                             ),
                         ],
@@ -332,13 +339,14 @@ class ManageOrdersScreen extends StatelessWidget {
     );
   }
 
-  // Các hàm helper (giữ nguyên)
+  // Các hàm helper (đã cập nhật)
   Widget _buildStatusButton({
     required BuildContext context,
     required String status,
     required String currentStatus,
     required String orderId,
     required OrderProvider orderProvider,
+    required ProductProvider productProvider,
     required Color color,
   }) {
     final isSelected = currentStatus == status;
@@ -353,7 +361,7 @@ class ManageOrdersScreen extends StatelessWidget {
       onPressed: isDisabled || isSelected
           ? null
           : () {
-        _showConfirmUpdateStatus(context, orderId, currentStatus, status, orderProvider);
+        _showConfirmUpdateStatus(context, orderId, currentStatus, status, orderProvider, productProvider);
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: isSelected ? color : Colors.white,
@@ -368,12 +376,12 @@ class ManageOrdersScreen extends StatelessWidget {
     );
   }
 
-  void _showConfirmUpdateStatus(BuildContext context, String orderId, String oldStatus, String newStatus, OrderProvider provider) {
+  void _showConfirmUpdateStatus(BuildContext context, String orderId, String oldStatus, String newStatus, OrderProvider orderProvider, ProductProvider productProvider) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Xác nhận cập nhật'),
-        content: Text('Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng từ "$oldStatus" thành "$newStatus"?'),
+        content: Text('Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng từ "$oldStatus" thành "$newStatus"?${newStatus == 'Đã giao' ? '\n\nLưu ý: Số lượng tồn kho sẽ bị trừ đi khi xác nhận Đã giao.' : ''}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -382,7 +390,21 @@ class ManageOrdersScreen extends StatelessWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              provider.updateOrderStatus(orderId, newStatus);
+              // Cập nhật trạng thái đơn hàng (chỉ truyền 2 tham số theo đúng khai báo ở OrderProvider)
+              orderProvider.updateOrderStatus(orderId, newStatus);
+              
+              // Nếu trạng thái là 'Đã giao', tiến hành trừ tồn kho
+              if (newStatus == 'Đã giao') {
+                try {
+                  final order = orderProvider.orders.firstWhere((o) => o.id == orderId);
+                  for (var item in order.items) {
+                    productProvider.reduceStock(item.shoe.id, item.quantity);
+                  }
+                } catch (e) {
+                  debugPrint('Lỗi khi cập nhật tồn kho: $e');
+                }
+              }
+
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

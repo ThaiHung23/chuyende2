@@ -13,7 +13,7 @@ class ProductProvider with ChangeNotifier {
 
   List<Shoe> get products => _products;
 
-  // Getter lọc đầy đủ
+  // Getter lọc sản phẩm
   List<Shoe> get filteredProducts {
     return _products.where((p) {
       final matchSearch = _searchQuery.isEmpty ||
@@ -54,12 +54,12 @@ class ProductProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Fetch products (giữ nguyên)
+  // Lấy dữ liệu thời gian thực từ Firebase
   void fetchProducts() {
     _firestore.collection('products').snapshots().listen((snapshot) {
       _products = snapshot.docs.map((doc) {
         final data = doc.data();
-        return Shoe.fromJson({...data, 'id': doc.id}); // Đảm bảo id đúng
+        return Shoe.fromJson({...data, 'id': doc.id});
       }).toList();
 
       notifyListeners();
@@ -69,7 +69,6 @@ class ProductProvider with ChangeNotifier {
   // ====================== THÊM SẢN PHẨM ======================
   Future<void> addProduct(Shoe shoe) async {
     try {
-      // Chỉ lưu lên Firebase, KHÔNG thêm thủ công vào list
       await _firestore.collection('products').doc(shoe.id).set({
         'name': shoe.name,
         'brand': shoe.brand,
@@ -80,18 +79,16 @@ class ProductProvider with ChangeNotifier {
         'sizes': shoe.sizes,
         'colors': shoe.colors,
         'gender': shoe.gender,
+        'stock': shoe.stock,
         'reviews': [],
       });
-
-      // KHÔNG CÓ DÒNG _products.add(shoe); nữa
-      // Listener snapshots() sẽ tự cập nhật
     } catch (e) {
       print('Lỗi thêm sản phẩm: $e');
       rethrow;
     }
   }
 
-// ====================== CẬP NHẬT SẢN PHẨM ======================
+  // ====================== CẬP NHẬT SẢN PHẨM ======================
   Future<void> updateProduct(String id, Shoe newShoe) async {
     try {
       await _firestore.collection('products').doc(id).update({
@@ -104,16 +101,34 @@ class ProductProvider with ChangeNotifier {
         'sizes': newShoe.sizes,
         'colors': newShoe.colors,
         'gender': newShoe.gender,
+        'stock': newShoe.stock,
       });
-
-      // KHÔNG gán thủ công _products[index] = newShoe;
-      // Listener sẽ tự cập nhật
     } catch (e) {
       print('Lỗi cập nhật sản phẩm: $e');
       rethrow;
     }
   }
 
+  // ====================== GIẢM TỒN KHO ======================
+  Future<void> reduceStock(String productId, int quantity) async {
+    try {
+      final productRef = _firestore.collection('products').doc(productId);
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(productRef);
+        if (!snapshot.exists) return;
+        
+        int currentStock = snapshot.data()?['stock'] ?? 0;
+        int newStock = currentStock - quantity;
+        if (newStock < 0) newStock = 0;
+        
+        transaction.update(productRef, {'stock': newStock});
+      });
+    } catch (e) {
+      print('Lỗi cập nhật tồn kho: $e');
+    }
+  }
+
+  // ====================== XÓA SẢN PHẨM ======================
   Future<void> deleteProduct(String id) async {
     try {
       await _firestore.collection('products').doc(id).delete();
@@ -122,20 +137,18 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
+  // ====================== THÊM ĐÁNH GIÁ ======================
   Future<void> addReview(String productId, Review review) async {
     try {
       final productRef = _firestore.collection('products').doc(productId);
 
+      // Chỉ cập nhật lên Firebase
+      // Listener trong fetchProducts sẽ tự động nhận diện thay đổi và cập nhật UI
       await productRef.update({
         'reviews': FieldValue.arrayUnion([review.toJson()]),
       });
 
-      // Cập nhật lại danh sách local
-      final index = _products.indexWhere((p) => p.id == productId);
-      if (index != -1) {
-        _products[index].reviews.add(review);
-        notifyListeners();
-      }
+      // ĐÃ XÓA: phần thêm thủ công vào _products để tránh trùng lặp dữ liệu
     } catch (e) {
       print('Lỗi thêm review: $e');
       rethrow;

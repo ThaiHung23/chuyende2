@@ -51,6 +51,23 @@ class ShoeCard extends StatelessWidget {
                     },
                   ),
                 ),
+                // Badge hiển thị hết hàng
+                if (shoe.stock <= 0)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'Hết hàng',
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
               ],
             ),
 
@@ -70,12 +87,26 @@ class ShoeCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      StarRating(rating: shoe.averageRating, size: 15),
-                      const SizedBox(width: 5),
+                      Row(
+                        children: [
+                          StarRating(rating: shoe.averageRating, size: 15),
+                          const SizedBox(width: 5),
+                          Text(
+                            shoe.averageRating > 0 ? shoe.averageRating.toStringAsFixed(1) : '',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      // Hiển thị số lượng tồn kho
                       Text(
-                        shoe.averageRating > 0 ? shoe.averageRating.toStringAsFixed(1) : '',
-                        style: const TextStyle(fontSize: 13),
+                        'Kho: ${shoe.stock}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: shoe.stock < 5 ? Colors.red : Colors.green,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),

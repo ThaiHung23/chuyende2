@@ -11,6 +11,7 @@ class Shoe {
   final List<String> sizes;
   final List<String> colors;
   final String gender;          // <-- THÊM: nam, nữ, unisex
+  final int stock;             // <-- THÊM: Số lượng tồn kho
   final List<Review> reviews;
 
   double get averageRating {
@@ -29,6 +30,7 @@ class Shoe {
     required this.sizes,
     required this.colors,
     required this.gender,       // <-- required
+    this.stock = 0,             // <-- default value
     List<Review>? reviews,
   }) : reviews = reviews ?? [];
 
@@ -43,6 +45,7 @@ class Shoe {
     'sizes': sizes,
     'colors': colors,
     'gender': gender,
+    'stock': stock,
     'reviews': reviews.map((r) => r.toJson()).toList(),
   };
 
@@ -57,6 +60,7 @@ class Shoe {
     sizes: List<String>.from(json['sizes']),
     colors: List<String>.from(json['colors']),
     gender: json['gender'] ?? 'unisex',
+    stock: json['stock'] ?? 0,
     reviews: (json['reviews'] as List<dynamic>?)
         ?.map((r) => Review.fromJson(r))
         .toList() ??
